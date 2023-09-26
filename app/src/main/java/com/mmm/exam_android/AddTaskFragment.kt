@@ -3,6 +3,8 @@ package com.kevin.taskmanagement.Fragment
 import android.annotation.SuppressLint
 import android.app.DatePickerDialog
 import android.app.TimePickerDialog
+import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -10,109 +12,104 @@ import android.view.ViewGroup
 import android.widget.DatePicker
 import android.widget.TimePicker
 import android.widget.Toast
+import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
-import com.kevin.taskmanagement.Database.RoomDB
-import com.kevin.taskmanagement.Enitiy.TaskEnitiy
-import com.kevin.taskmanagement.databinding.FragmentAddTaskBinding
+import com.google.firebase.database.DatabaseReference
+import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.storage.FirebaseStorage
+import com.google.firebase.storage.StorageReference
+import com.mmm.exam_android.R
+import com.mmm.exam_android.ShoppingModel
+import com.mmm.exam_android.databinding.FragmentAddTaskBinding
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
 
 class AddTaskFragment : Fragment() {
+
     lateinit var binding: FragmentAddTaskBinding
-    lateinit var db: RoomDB
+    lateinit var uri: Uri
+    val IMAGE_CODE = 8
+    lateinit var storageRef: StorageReference
+    lateinit var dbRef: DatabaseReference
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?,
     ): View? {
         binding = FragmentAddTaskBinding.inflate(layoutInflater)
-        db = RoomDB.init(context)
-        AddData()
+
+        dbRef = FirebaseDatabase.getInstance().reference
+        storageRef = FirebaseStorage.getInstance().reference
+
+        binding.addimg.setOnClickListener {
+
+            var intent = Intent(Intent.ACTION_GET_CONTENT)
+            intent.type = "image/*"
+            startActivityForResult(intent, IMAGE_CODE)
+        }
+
+        binding.uploaddata.setOnClickListener {
+
+            val ref = storageRef.child("images/${uri.lastPathSegment}.jpg")
+            var uploadTask = ref.putFile(uri)
+
+            val urlTask = uploadTask.continueWithTask { task ->
+                if (!task.isSuccessful) {
+                    task.exception?.let {
+                        throw it
+                    }
+                }
+                ref.downloadUrl
+            }.addOnCompleteListener { task ->
+                if (task.isSuccessful) {
+
+                    if (binding.producttitle.text.toString().isEmpty() || binding.productdesc.text.toString().isEmpty() || binding.productcategory.text.toString().isEmpty() || binding.productprice.text.toString().isEmpty()
+                    ) {
+                        Toast.makeText(context, "Please enter data", Toast.LENGTH_SHORT).show()
+                    } else {
+                        val downloadUri = task.result
+
+                        var key = dbRef.root.push().key
+                        var title = binding.producttitle.text.toString()
+                        var desc = binding.productdesc.text.toString()
+                        var category = binding.productcategory.text.toString()
+                        var price = binding.productprice.text.toString()
+                        var image = downloadUri.toString()
+                        var data =
+                            ShoppingModel(key!!, title, desc, category, price, image)
+
+                        dbRef.root.child("Shopping").child(key).setValue(data)
+                        Toast.makeText(context, "Data Upload Succesfully", Toast.LENGTH_SHORT).show()
+                        binding.producttitle.setText("")
+                        binding.productdesc.setText("")
+                        binding.productcategory.setText("")
+                        binding.productprice.setText("")
+                        binding.imgposter.setImageResource(R.drawable.imageadd)
+                    }
+                } else {
+
+                }
+            }
+        }
 
         return binding.root
+
+
     }
 
-    @SuppressLint("NewApi")
-    private fun AddData() {
-        binding.edtdate.setOnClickListener {
 
-            var date = Date()
-            var format1 = SimpleDateFormat("dd-MM-yy")
-            var currentDate = format1.format(date)
-
-            var dates = currentDate.split("-")
-            binding.edtdate.text = currentDate
-
-            var dialog =
-                DatePickerDialog(requireContext(), object : DatePickerDialog.OnDateSetListener {
-                    override fun onDateSet(p0: DatePicker?, p1: Int, p2: Int, p3: Int) {
-
-                        var Year = p1
-                        var Month = p2 + 1
-                        var Date = p3
-
-                        var selectedDate = "$p3-${(p2 + 1)}-$p1"
-                        binding.edtdate.text = selectedDate
-                    }
-
-                }, dates[2].toInt(), dates[1].toInt() - 1, dates[0].toInt())
-            dialog.show()
-        }
-
-        binding.edttime.setOnClickListener {
-
-            var date = Date()
-
-            var format2 = SimpleDateFormat("hh:mm")
-            var currentTime = format2.format(date)
-
-            binding.edttime.text = currentTime
-            var seleTime = currentTime
-            var dialog1 = TimePickerDialog(context, object : TimePickerDialog.OnTimeSetListener {
-                override fun onTimeSet(p0: TimePicker?, p1: Int, p2: Int) {
-
-                    var hour = p1
-                    var minute = p2
-                    var sdf = SimpleDateFormat("hh:mm", Locale.US)
-                    var tme = "$hour:$minute "
-                    binding.edttime.setText(tme)
-                }
-
-            }, 10, 0, true)
-            dialog1.show()
-        }
-
-        binding.btnsubmit.setOnClickListener {
-            var title = binding.edtTask.text.toString()
-            var discription = binding.edtdescription.text.toString()
-            var Date = binding.edtdate.text.toString()
-            val Month = binding.edtdate.text.toString()
-            var Year = binding.edtdate.text.toString()
-            var hour = binding.edttime.text.toString()
-            var minute = binding.edttime.text.toString()
-            var format = SimpleDateFormat("dd-MM-yy hh:mm")
-            var current = format.format(Date())
-
-            if (title.isEmpty() || discription.isEmpty() || Date.isEmpty() || Month.isEmpty() || Year.isEmpty() || hour.isEmpty() || minute.isEmpty()) {
-                Toast.makeText(context, "Please enter data", Toast.LENGTH_SHORT).show()
-            } else {
-                binding.edtTask.setText("")
-                binding.edtdescription.setText("")
-                binding.edtdate.setText("__-__-__")
-                binding.edttime.setText("__:__")
-                var data = TaskEnitiy(
-                    title,
-                    discription,
-                    Date,
-                    Month,
-                    Year,
-                    hour,
-                    minute
-                )
-                db.task().AddTask(data)
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (resultCode == AppCompatActivity.RESULT_OK) {
+            if (requestCode == IMAGE_CODE) {
+                uri = data?.data!!
+                binding.imgposter.setImageURI(uri)
             }
         }
     }
+
+
 }

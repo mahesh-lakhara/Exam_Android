@@ -1,11 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
-<shape xmlns:android="http://schemas.android.com/apk/res/android">
+<shape xmlns:tools="http://schemas.android.com/tools" xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <corners android:bottomRightRadius="@dimen/_40sdp"/>
+    <corners android:bottomRightRadius="@dimen/_40sdp"
+        android:bottomLeftRadius="@dimen/_40sdp"
+        tools:ignore="StateListReachable" />
 
-    <gradient android:startColor="#00d4d4"
-        android:centerColor="#22D4FD"
+    <gradient android:startColor="#E91E63"
+        android:centerColor="#4D1685"
         android:angle="165"
-        android:endColor="#64BBFD"/>
+        android:endColor="#2A0767"/>
 
 </shape>

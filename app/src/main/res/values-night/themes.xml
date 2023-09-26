@@ -4,4 +4,21 @@
         <!-- Customize your dark theme here. -->
         <!-- <item name="colorPrimary">@color/my_dark_primary</item> -->
     </style>
+
+
+    <style name="TextColorStyle">
+        <item name="android:textColor">#ffffff</item>
+    </style>
+
+    <style name="ColorTextStyle">
+        <item name="android:textColor">#ffffff</item>
+    </style>
+
+    <style name="DescriptioncolorStyle">
+        <item name="android:textColor">#BDBCBC</item>
+    </style>
+
+    <style name="ColorStyle">
+        <item name="android:background">#ffffff</item>
+    </style>
 </resources>
